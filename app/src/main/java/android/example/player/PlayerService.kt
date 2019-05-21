@@ -45,18 +45,18 @@ class PlayerService : Service() {
                     }
 
                     override fun getCurrentContentText(player: Player?): String? {
-                        return AudioPlayer.songInfo[AudioPlayer.player?.currentWindowIndex ?: 0][0]
+                        return AudioPlayer.songInfo[AudioPlayer.currentIndex.value ?: 0][0]
                     }
 
                     override fun getCurrentContentTitle(player: Player?): String {
-                        return AudioPlayer.songInfo[AudioPlayer.player?.currentWindowIndex ?: 0][1]
+                        return AudioPlayer.songInfo[AudioPlayer.currentIndex.value ?: 0][1]
                     }
 
                     override fun getCurrentLargeIcon(
                         player: Player?,
                         callback: PlayerNotificationManager.BitmapCallback?
                     ): Bitmap? {
-                        return AudioPlayer.albumImages[AudioPlayer.player?.currentWindowIndex ?: 0].icon
+                        return AudioPlayer.albumImages[AudioPlayer.currentIndex.value ?: 0].icon
                     }
 
                 },

@@ -9,7 +9,6 @@ import android.example.player.albumview.PageTransformer
 import android.example.player.databinding.PlayerActivityBinding
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -129,7 +128,7 @@ class MainActivity : AppCompatActivity() {
                     initPageAdapter()
                     withContext(Dispatchers.Main) {
                         if (isLoaded == true) {
-                            initIcon(AudioPlayer.player?.currentWindowIndex ?: 0)
+                            initIcon(AudioPlayer.currentIndex.value ?: 0)
                             viewModel.setMiniPlayerVisibility(true)
                             //Start service
                             Util.startForegroundService(
@@ -137,9 +136,6 @@ class MainActivity : AppCompatActivity() {
                                 Intent(applicationContext, PlayerService::class.java)
                             )
                             binding.selectButtonHolder.visibility = View.VISIBLE
-                            binding.playerBottom.albumViewPager.setCurrentItem(
-                                AudioPlayer.player?.currentWindowIndex ?: 0, true
-                            )
                             binding.miniPlayerControl.player = AudioPlayer.player
                             binding.playerBottom.mainPlayerProgress.player = AudioPlayer.player
                             binding.playerBottom.mainPlayer.player = AudioPlayer.player
@@ -330,11 +326,9 @@ class MainActivity : AppCompatActivity() {
                     //Player loaded
                     withContext(Dispatchers.Main) {
                         binding.selectButtonHolder.visibility = View.VISIBLE
-                        AudioPlayer.setLoadedState(true)
                         if (AudioPlayer.samples.isNotEmpty())
                             Toast.makeText(this@MainActivity, "Плеер загружен!", Toast.LENGTH_LONG).show()
                         else {
-                            AudioPlayer.setCurrentIndex(0)
                             Toast.makeText(
                                 this@MainActivity,
                                 "В папке отсутствуют MP3 файлы!",
@@ -355,7 +349,11 @@ class MainActivity : AppCompatActivity() {
                     binding.playerBottom.albumViewPager.adapter = pageAdapter
                     binding.playerBottom.albumViewPager.offscreenPageLimit = 5
                     binding.playerBottom.albumViewPager.setPageTransformer(false, PageTransformer())
-                    binding.playerBottom.albumViewPager.currentItem = AudioPlayer.player?.currentWindowIndex ?: 0
+                    binding.playerBottom.albumViewPager.clearOnPageChangeListeners()
+                    binding.playerBottom.albumViewPager.setCurrentItem(
+                        AudioPlayer.currentIndex.value ?: 0,
+                        true
+                    )
                     binding.playerBottom.albumViewPager.addOnPageChangeListener(pageListener)
                 }
             }

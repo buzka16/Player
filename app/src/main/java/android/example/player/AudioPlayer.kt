@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
-import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -86,6 +85,7 @@ object AudioPlayer {
                     _currentProgress.value = 0
                 }
             })
+            _currentIndex.value = 0
             _isLoaded.value = true
         }
     }
@@ -100,8 +100,8 @@ object AudioPlayer {
             if (samples.isNotEmpty()) {
                 songInfo = Array(samples.size) { arrayOf("", "") }
                 albumImages = List(samples.size) { Item(null) }
+                val mmr = MediaMetadataRetriever()
                 for ((index, sample) in samples.withIndex()) {
-                    val mmr = MediaMetadataRetriever()
                     mmr.setDataSource(
                         context,
                         sample
