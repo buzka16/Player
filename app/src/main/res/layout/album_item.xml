@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/album_item_holder"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="@dimen/default_elevation">
+
+        <ImageView
+            android:id="@+id/album_image_player"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
+            tools:srcCompat="@drawable/default_song_icon" />
+    </androidx.cardview.widget.CardView>
+</RelativeLayout>

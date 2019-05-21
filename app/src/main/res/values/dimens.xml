@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="default_elevation">20dp</dimen>
+    <dimen name="select_radius">10dp</dimen>
+    <dimen name="default_elevation_land">5dp</dimen>
+</resources>
