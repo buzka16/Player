@@ -3,4 +3,5 @@
     <dimen name="default_elevation">20dp</dimen>
     <dimen name="select_radius">10dp</dimen>
     <dimen name="default_elevation_land">5dp</dimen>
+    <dimen name="hide_button_width">50dp</dimen>
 </resources>

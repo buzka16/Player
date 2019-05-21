@@ -7,8 +7,10 @@ import android.content.pm.PackageManager
 import android.example.player.albumview.AlbumAdapter
 import android.example.player.albumview.PageTransformer
 import android.example.player.databinding.PlayerActivityBinding
+import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -70,27 +72,6 @@ class MainActivity : AppCompatActivity() {
 
         viewModel = ViewModelProviders.of(this).get(ActivityViewModel::class.java)
 
-        when (AudioPlayer.isLoaded.value) {
-            true -> {
-                viewModel.setMiniPlayerVisibility(true)
-                binding.selectButtonHolder.visibility = View.VISIBLE
-            }
-            false -> {
-                binding.selectButtonHolder.visibility = View.INVISIBLE
-                viewModel.setMiniPlayerVisibility(false)
-            }
-            else -> viewModel.setMiniPlayerVisibility(false)
-        }
-
-        if (viewModel.isPlayerVisible.value == BottomSheetBehavior.STATE_EXPANDED)
-            BottomSheetBehavior.from(binding.playerBottom.bottomSheetPlayer).state =
-                BottomSheetBehavior.STATE_EXPANDED
-        binding.playerBottom.hidePlayerButton.setOnClickListener {
-            if (viewModel.isPlayerVisible.value == BottomSheetBehavior.STATE_EXPANDED)
-                BottomSheetBehavior.from(binding.playerBottom.bottomSheetPlayer).state =
-                    BottomSheetBehavior.STATE_COLLAPSED
-        }
-
         AudioPlayer.currentState.observe(this, Observer
         { newState ->
             when (newState) {
@@ -99,6 +80,10 @@ class MainActivity : AppCompatActivity() {
                     BottomSheetBehavior.from(binding.playerBottom.bottomSheetPlayer).state =
                         BottomSheetBehavior.STATE_COLLAPSED
                     AudioPlayer.setLoadedState(null)
+                    if (AudioPlayer.hasException) {
+                        Toast.makeText(this, "Ошибка при воспроизведении файла", Toast.LENGTH_LONG).show()
+                        AudioPlayer.hasException = false
+                    }
                 }
             }
         })
@@ -127,18 +112,23 @@ class MainActivity : AppCompatActivity() {
         AudioPlayer.isLoaded.observe(this, Observer
         { isLoaded ->
             if (isLoaded != null) {
+                if (isLoaded != false)
+                    binding.selectButtonHolder.visibility = View.VISIBLE
+                else
+                    binding.selectButtonHolder.visibility = View.INVISIBLE
                 CoroutineScope(Dispatchers.Default).launch {
                     initPageAdapter()
                     withContext(Dispatchers.Main) {
                         if (isLoaded == true) {
                             initIcon(AudioPlayer.currentIndex.value ?: 0)
-                            viewModel.setMiniPlayerVisibility(true)
+                            if (viewModel.isPlayerVisible.value != BottomSheetBehavior.STATE_EXPANDED)
+                                viewModel.setMiniPlayerVisibility(true)
                             //Start service
                             Util.startForegroundService(
                                 applicationContext,
                                 Intent(applicationContext, PlayerService::class.java)
                             )
-                            binding.selectButtonHolder.visibility = View.VISIBLE
+
                             binding.miniPlayerControl.player = AudioPlayer.player
                             binding.playerBottom.mainPlayerProgress.player = AudioPlayer.player
                             binding.playerBottom.mainPlayer.player = AudioPlayer.player
@@ -149,10 +139,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } else {
-                if (isLoaded == false)
-                    binding.selectButtonHolder.visibility = View.VISIBLE
+                binding.selectButtonHolder.visibility = View.VISIBLE
                 viewModel.setMiniPlayerVisibility(false)
             }
+
         })
 
 
@@ -178,6 +168,39 @@ class MainActivity : AppCompatActivity() {
                 binding.miniPlayerToolbar.visibility = View.INVISIBLE
         })
 
+        viewModel.isPlayerVisible.observe(this, Observer { newState ->
+            when (newState) {
+                BottomSheetBehavior.STATE_COLLAPSED -> {
+                    if (AudioPlayer.isLoaded.value == true) {
+                        binding.selectButtonHolder.visibility = View.VISIBLE
+                        viewModel.setMiniPlayerVisibility(true)
+                    } else {
+                        if (AudioPlayer.isLoaded.value == false)
+                            binding.selectButtonHolder.visibility = View.INVISIBLE
+                        else binding.selectButtonHolder.visibility = View.VISIBLE
+                        viewModel.setMiniPlayerVisibility(false)
+                    }
+                }
+                BottomSheetBehavior.STATE_DRAGGING -> {
+                    if (AudioPlayer.isLoaded.value == true) {
+                        binding.selectButtonHolder.visibility = View.VISIBLE
+                        viewModel.setMiniPlayerVisibility(true)
+                    } else {
+                        if (AudioPlayer.isLoaded.value == false)
+                            binding.selectButtonHolder.visibility = View.INVISIBLE
+                        else binding.selectButtonHolder.visibility = View.VISIBLE
+                        viewModel.setMiniPlayerVisibility(false)
+                    }
+                }
+
+                BottomSheetBehavior.STATE_EXPANDED -> {
+                    binding.selectButtonHolder.visibility = View.INVISIBLE
+                    viewModel.setMiniPlayerVisibility(false)
+                }
+            }
+        })
+
+
         viewModel.albumImage.observe(this, Observer
         { newImage ->
             binding.albumImage.setImageBitmap(newImage)
@@ -196,6 +219,48 @@ class MainActivity : AppCompatActivity() {
             this,
             Observer
             { newArtist -> binding.playerBottom.artistText.text = newArtist.toString() })
+
+
+        when (viewModel.isPlayerVisible.value) {
+            BottomSheetBehavior.STATE_EXPANDED -> {
+                BottomSheetBehavior.from(binding.playerBottom.bottomSheetPlayer).state =
+                    viewModel.isPlayerVisible.value!!
+                binding.selectButtonHolder.visibility = View.INVISIBLE
+                viewModel.setMiniPlayerVisibility(false)
+            }
+            BottomSheetBehavior.STATE_COLLAPSED -> {
+                if (AudioPlayer.isLoaded.value == true) {
+                    binding.selectButtonHolder.visibility = View.VISIBLE
+                    viewModel.setMiniPlayerVisibility(true)
+                } else {
+                    if (AudioPlayer.isLoaded.value == false)
+                        binding.selectButtonHolder.visibility = View.INVISIBLE
+                    else binding.selectButtonHolder.visibility = View.VISIBLE
+                    viewModel.setMiniPlayerVisibility(false)
+                }
+            }
+
+        }
+
+        when (AudioPlayer.isLoaded.value) {
+            true -> {
+                binding.selectButtonHolder.visibility = View.VISIBLE
+            }
+            false -> {
+                binding.selectButtonHolder.visibility = View.INVISIBLE
+                viewModel.setMiniPlayerVisibility(false)
+            }
+            else -> viewModel.setMiniPlayerVisibility(false)
+        }
+
+
+
+        binding.playerBottom.hidePlayerButton.setOnClickListener {
+            if (viewModel.isPlayerVisible.value == BottomSheetBehavior.STATE_EXPANDED)
+                BottomSheetBehavior.from(binding.playerBottom.bottomSheetPlayer).state =
+                    BottomSheetBehavior.STATE_COLLAPSED
+        }
+
 
         binding.miniPlayerToolbar.setOnClickListener {
             BottomSheetBehavior.from(binding.playerBottom.bottomSheetPlayer).state =
@@ -221,17 +286,15 @@ class MainActivity : AppCompatActivity() {
         bottomSheetBehavior.setBottomSheetCallback(
             object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                    viewModel.setPlayerVisibility(BottomSheetBehavior.STATE_DRAGGING)
+
                 }
 
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_EXPANDED) {
                         binding.selectButtonHolder.visibility = View.INVISIBLE
-                        viewModel.setPlayerVisibility(BottomSheetBehavior.STATE_EXPANDED)
-                    } else {
-                        if (AudioPlayer.isLoaded.value != false)
-                            binding.selectButtonHolder.visibility = View.VISIBLE
-                        viewModel.setPlayerVisibility(BottomSheetBehavior.STATE_COLLAPSED)
                     }
+                    viewModel.setPlayerVisibility(newState)
                 }
             })
 
@@ -311,21 +374,26 @@ class MainActivity : AppCompatActivity() {
                 CoroutineScope(Dispatchers.Default).launch {
                     //Prepare view
                     withContext(Dispatchers.Main) {
+                        AudioPlayer.player?.release()
+                        AudioPlayer.setLoadedState(false)
                         binding.selectButtonHolder.visibility = View.INVISIBLE
-                        AudioPlayer.setLoadedState(null)
                         binding.miniPlayerControl.player = null
                         binding.playerBottom.mainPlayerProgress.player = null
                         binding.playerBottom.mainPlayer.player = null
                         viewModel.setMiniPlayerVisibility(false)
                         stopService(Intent(applicationContext, PlayerService::class.java))
-                        AudioPlayer.player?.release()
                         Toast.makeText(this@MainActivity, "Плеер загружается...", Toast.LENGTH_LONG).show()
                     }
                     //Load Player
                     withContext(Dispatchers.Default) {
                         AudioPlayer.initPlayer(
                             applicationContext,
-                            Intent(applicationContext, AudioPlayer::class.java).apply { putExtra("uri", data.data) })
+                            Intent(applicationContext, AudioPlayer::class.java).apply {
+                                putExtra(
+                                    "uri",
+                                    data.data
+                                )
+                            })
                         initPageAdapter()
                     }
                     //Player loaded
@@ -366,7 +434,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initIcon(index: Int) {
-        viewModel.setImage(AudioPlayer.albumImages[index].icon!!)
+        viewModel.setImage(
+            AudioPlayer.albumImages[index].icon ?: BitmapFactory.decodeResource(
+                resources,
+                R.drawable.default_song_icon
+            )
+        )
         viewModel.setArtist(AudioPlayer.songInfo[index][0])
         viewModel.setSongName(AudioPlayer.songInfo[index][1])
     }

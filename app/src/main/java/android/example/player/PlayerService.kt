@@ -18,6 +18,7 @@ class PlayerService : Service() {
     override fun onDestroy() {
         playerNotificationManager?.setPlayer(null)
         AudioPlayer.player?.release()
+        AudioPlayer.setLoadedState(null)
         super.onDestroy()
     }
 

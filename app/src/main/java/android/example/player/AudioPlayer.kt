@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
+import android.util.Log
+import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -29,6 +31,7 @@ object AudioPlayer {
     var samples = ArrayList<Uri>()
     var albumImages: List<Item> = listOf(Item(null))
     var songInfo = arrayOf(arrayOf("Неизвестный исполнитель", "Без названия"))
+    var hasException = false
 
     private var _currentIndex = MutableLiveData<Int?>()
     val currentIndex: LiveData<Int?>
@@ -72,6 +75,8 @@ object AudioPlayer {
             player?.addListener(object : Player.EventListener {
 
                 override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+                    if (player?.playbackError != null)
+                        hasException = true
                     _currentState.value = player?.playbackState
                     updateProgressBar(handler)
                 }
@@ -111,8 +116,15 @@ object AudioPlayer {
                     val title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
                     val artist = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
                     songInfo[index] = arrayOf(artist ?: "Неизвестный исполнитель", title ?: "Без названия")
+                    withContext(Dispatchers.Main) {
+                        if ((index + 1) % 10 == 0 || index == samples.size)
+                            Toast.makeText(
+                                context,
+                                "Загружено ${index + 1}/${samples.size} треков",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                    }
                 }
-
             }
         }
     }
@@ -142,7 +154,7 @@ object AudioPlayer {
         // Schedule an update if necessary.
         val playbackState = if (player == null) Player.STATE_IDLE else player?.playbackState
         if (playbackState != Player.STATE_IDLE) {
-            handler.postDelayed(updateProgressAction, 10)
+            handler.postDelayed(updateProgressAction, 1)
         }
     }
 
