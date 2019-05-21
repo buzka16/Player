@@ -48,10 +48,6 @@ object AudioPlayer {
         _isLoaded.value = state
     }
 
-    fun setCurrentIndex(index: Int) {
-        _currentIndex.value = index
-    }
-
     private val handler = Handler()
 
     suspend fun initPlayer(context: Context, intent: Intent?) {
@@ -118,7 +114,6 @@ object AudioPlayer {
                 }
 
             }
-
         }
     }
 
@@ -146,8 +141,8 @@ object AudioPlayer {
         handler.removeCallbacks(updateProgressAction)
         // Schedule an update if necessary.
         val playbackState = if (player == null) Player.STATE_IDLE else player?.playbackState
-        if (playbackState != Player.STATE_IDLE && playbackState != Player.STATE_ENDED) {
-            handler.postDelayed(updateProgressAction, 1)
+        if (playbackState != Player.STATE_IDLE) {
+            handler.postDelayed(updateProgressAction, 10)
         }
     }
 

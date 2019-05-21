@@ -71,7 +71,10 @@ class MainActivity : AppCompatActivity() {
         viewModel = ViewModelProviders.of(this).get(ActivityViewModel::class.java)
 
         when (AudioPlayer.isLoaded.value) {
-            true -> viewModel.setMiniPlayerVisibility(true)
+            true -> {
+                viewModel.setMiniPlayerVisibility(true)
+                binding.selectButtonHolder.visibility = View.VISIBLE
+            }
             false -> {
                 binding.selectButtonHolder.visibility = View.INVISIBLE
                 viewModel.setMiniPlayerVisibility(false)
@@ -146,6 +149,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } else {
+                if (isLoaded == false)
+                    binding.selectButtonHolder.visibility = View.VISIBLE
                 viewModel.setMiniPlayerVisibility(false)
             }
         })
@@ -223,7 +228,7 @@ class MainActivity : AppCompatActivity() {
                         binding.selectButtonHolder.visibility = View.INVISIBLE
                         viewModel.setPlayerVisibility(BottomSheetBehavior.STATE_EXPANDED)
                     } else {
-                        if (AudioPlayer.isLoaded.value == true)
+                        if (AudioPlayer.isLoaded.value != false)
                             binding.selectButtonHolder.visibility = View.VISIBLE
                         viewModel.setPlayerVisibility(BottomSheetBehavior.STATE_COLLAPSED)
                     }
